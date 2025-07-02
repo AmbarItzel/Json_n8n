@@ -8,3 +8,4 @@ Crear varios modulos para que trabajen con varias apis independientes
 ##### -Ocupar apis desplegadar en render, se van a trabajar 3
 #### De que son las apis?
 ##### -La primera es de Tumores: Esta trabaja a base de imagenes de resonancias magneticas del cerebro
+##### -La segunda
