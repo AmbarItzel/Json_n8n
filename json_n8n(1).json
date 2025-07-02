@@ -1,0 +1,520 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mri-upload",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2120,
+        60
+      ],
+      "id": "51b31326-a315-4ff3-9ed6-da8dc36c8873",
+      "name": "Aqui es donde se recibe la Imagen",
+      "webhookId": "91ad21ee-881f-4dba-b590-6c2ec7a804d0"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "analysis_type",
+              "value": "={{ $json.body.analysis_type || 'tumor' }}"
+            },
+            {
+              "name": "chat_id",
+              "value": "={{ $json.body.chat_id || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1960,
+        60
+      ],
+      "id": "ddf24a2d-eaea-42a4-8191-760aed1aa69b",
+      "name": "Aqui es donde se extraen los Parámetros"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.analysis_type }}",
+              "value2": "este es el tumor"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1820,
+        60
+      ],
+      "id": "ffea017e-05f0-4430-8e51-f3698ff7deb6",
+      "name": "Aqui es donde lleva el proceso de elegir el Análisis"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://expresiones-faciales.onrender.com/analyze",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1660,
+        160
+      ],
+      "id": "d75d4abd-b8b0-433f-b0ba-11afe5140f17",
+      "name": "Se Analiza la Emoción"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.error }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1460,
+        -40
+      ],
+      "id": "b294b3db-d037-4025-a710-878dca3da470",
+      "name": "Aqui es donde se tiene que verificar Error MRI"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "diagnosis",
+              "value": "={{ $json.result || 'No diagnosis available' }}"
+            },
+            {
+              "name": "img_result",
+              "value": "={{ $json.img_tumor ? ($json.img_tumor.startsWith('data:') ? $json.img_tumor : 'data:image/png;base64,' + $json.img_tumor) : '' }}"
+            },
+            {
+              "name": "chat_id",
+              "value": "={{ $node['Se extraen los Parámetros'].json.chat_id }}"
+            },
+            {
+              "name": "analysis_type",
+              "value": "Es el tumor"
+            },
+            {
+              "name": "mri_report_url",
+              "value": "https://marketing-0i6j.onrender.com/static/mri-report.png"
+            }
+          ],
+          "number": [
+            {
+              "name": "confidence",
+              "value": "={{ ($json.confidence || 0) > 1 ? ($json.confidence || 0) / 100 : ($json.confidence || 0) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1260,
+        -40
+      ],
+      "id": "502eb515-ed26-4d62-b8e5-1c337164b6a0",
+      "name": "Se preparan los Datos MRI"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "diagnosis",
+              "value": "={{ $json.emotion || $json.predicted_emotion || 'Emoción no detectada' }}"
+            },
+            {
+              "name": "img_result",
+              "value": "={{ $json.image ? ($json.image.startsWith('data:') ? $json.image : 'data:image/png;base64,' + $json.image) : ($json.processed_image ? ($json.processed_image.startsWith('data:') ? $json.processed_image : 'data:image/png;base64,' + $json.processed_image) : '') }}"
+            },
+            {
+              "name": "chat_id",
+              "value": "={{ $node['Extraer Parámetros'].json.chat_id }}"
+            },
+            {
+              "name": "analysis_type",
+              "value": "emotion"
+            },
+            {
+              "name": "mri_report_url"
+            }
+          ],
+          "number": [
+            {
+              "name": "confidence",
+              "value": "={{ ($json.confidence || 0.95) > 1 ? ($json.confidence || 0.95) / 100 : ($json.confidence || 0.95) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1260,
+        160
+      ],
+      "id": "9b6f61c5-bae6-494e-a39d-c22b08cd594e",
+      "name": "Preparar Datos Emoción"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.analysis_type }}",
+              "value2": "tumor"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1060,
+        60
+      ],
+      "id": "48a19b46-5cde-46ec-bafe-30a1cc015bb2",
+      "name": "Es Análisis MRI?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://marketing-0i6j.onrender.com/api/mri-report",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"diagnosis\": \"{{ $json.diagnosis }}\",\n  \"confidence\": {{ $json.confidence }},\n  \"img_result\": \"{{ $json.img_result }}\",\n  \"chat_id\": \"{{ $json.chat_id }}\",\n  \"analysis_type\": \"{{ $json.analysis_type }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -900,
+        -40
+      ],
+      "id": "f3531925-cb43-4c84-830d-d4128560e16b",
+      "name": "Generar Reporte Marketing"
+    },
+    {
+      "parameters": {
+        "url": "https://marketing-0i6j.onrender.com/api/task9-visualization",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -40
+      ],
+      "id": "542c53bf-e5d0-46cd-bbdf-71212d6606c1",
+      "name": "Obtener Visualización"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"chat_id\": \"={{ $json.chat_id || '' }}\",\n  \"diagnosis\": \"={{ $json.diagnosis || 'No diagnosis available' }}\",\n  \"confidence\": {{ $json.confidence || 0 }},\n  \"mri_report\": \"={{ $json.mri_report_url || '' }}\",\n  \"analysis_type\": \"={{ $json.analysis_type || 'unknown' }}\",\n  \"status\": \"success\",\n  \"message\": \"Analysis completed successfully\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        60
+      ],
+      "id": "32ea3f6b-10a9-400c-8f66-d3a5b2d26f06",
+      "name": "Responder Webhook"
+    },
+    {
+      "parameters": {
+        "fromEmail": "fernandogarciahernandezveli@gmail.com",
+        "toEmail": "fernandogarciahernandezveli@gmail.com",
+        "subject": "❌ Error en Análisis MRI",
+        "html": "=<h2>❌ Error en el Análisis MRI</h2>\n<p>Se produjo un error durante el análisis: <strong>{{ $node['Analizar Tumor MRI'].json.error }}</strong></p>\n<p>Por favor, revisa la imagen enviada y vuelve a intentarlo.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        -1260,
+        -200
+      ],
+      "id": "655315e5-38d9-43eb-8818-0a914d5acffa",
+      "name": "Notificar Error",
+      "credentials": {
+        "smtp": {
+          "id": "Q9uAbbiheJ13mqaf",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://brain-mri-app.onrender.com/predict",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1640,
+        -40
+      ],
+      "id": "2b9caa52-ff93-4c83-b639-e9fcc0ecded6",
+      "name": "Analizar Tumor MRI"
+    },
+    {
+      "parameters": {
+        "fromEmail": "fernandogarciahernandezveli@gmail.com",
+        "toEmail": "fernandogarciahernandezveli@gmail.com",
+        "subject": "Resultado del Análisis MRI",
+        "html": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Reporte de Análisis Médico</title>\n    <style>\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            line-height: 1.6;\n            color: #2c3e50;\n            margin: 0;\n            padding: 0;\n            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);\n        }\n        .container {\n            max-width: 800px;\n            margin: 20px auto;\n            background: white;\n            border-radius: 15px;\n            box-shadow: 0 10px 30px rgba(0,0,0,0.1);\n            overflow: hidden;\n        }\n        .header {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            text-align: center;\n            padding: 30px 20px;\n        }\n        .header h1 {\n            margin: 0;\n            font-size: 2.2em;\n            font-weight: 300;\n            text-shadow: 0 2px 4px rgba(0,0,0,0.3);\n        }\n        .content {\n            padding: 40px;\n        }\n        .result-card {\n            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);\n            border-radius: 12px;\n            padding: 25px;\n            margin: 20px 0;\n            border-left: 5px solid #007bff;\n            box-shadow: 0 4px 15px rgba(0,0,0,0.05);\n        }\n        .diagnosis {\n            font-size: 1.4em;\n            font-weight: 600;\n            color: #dc3545;\n            margin-bottom: 10px;\n        }\n        .confidence {\n            font-size: 1.2em;\n            color: #28a745;\n            font-weight: 500;\n        }\n        .confidence-bar {\n            background: #e9ecef;\n            border-radius: 10px;\n            height: 10px;\n            width: 200px;\n            margin-left: 15px;\n            overflow: hidden;\n            display: inline-block;\n        }\n        .confidence-fill {\n            background: linear-gradient(90deg, #28a745, #20c997);\n            height: 100%;\n            width: {{ Math.min(($node['Preparar Datos MRI'].json.confidence || $node['Preparar Datos Emoción'].json.confidence || 0) * 100, 100) }}%;\n        }\n        .image-section {\n            text-align: center;\n            margin: 30px 0;\n        }\n        .image-section h3 {\n            color: #495057;\n            margin-bottom: 20px;\n            font-size: 1.3em;\n        }\n        .analysis-image {\n            max-width: 100%;\n            height: auto;\n            border-radius: 10px;\n            box-shadow: 0 6px 20px rgba(0,0,0,0.1);\n        }\n        .footer {\n            background: #f8f9fa;\n            padding: 20px;\n            text-align: center;\n            color: #6c757d;\n            font-size: 0.9em;\n            border-top: 1px solid #dee2e6;\n        }\n        .alert {\n            background: #fff3cd;\n            border: 1px solid #ffeaa7;\n            color: #856404;\n            padding: 15px;\n            border-radius: 8px;\n            margin: 20px 0;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>{{ ($node['Preparar Datos MRI'].json.analysis_type || $node['Preparar Datos Emoción'].json.analysis_type) === 'tumor' ? '🧠 Análisis de Resonancia Magnética' : '😊 Análisis de Expresiones Faciales' }}</h1>\n        </div>\n        \n        <div class=\"content\">\n            <div class=\"result-card\">\n                <div class=\"diagnosis\">\n                    <span>🔍</span>\n                    <strong>Diagnóstico:</strong> {{ $node['Preparar Datos MRI'].json.diagnosis || $node['Preparar Datos Emoción'].json.diagnosis || 'No disponible' }}\n                </div>\n                \n                <div class=\"confidence\">\n                    <span>📊</span>\n                    <strong>Nivel de Confianza:</strong> {{ (($node['Preparar Datos MRI'].json.confidence || $node['Preparar Datos Emoción'].json.confidence || 0) * 100).toFixed(2) }}%\n                    <div class=\"confidence-bar\">\n                        <div class=\"confidence-fill\"></div>\n                    </div>\n                </div>\n            </div>\n            \n            {{ ($node['Preparar Datos MRI'].json.confidence || $node['Preparar Datos Emoción'].json.confidence || 0) < 0.7 ? '<div class=\"alert\">⚠️ <strong>Nota:</strong> El nivel de confianza es relativamente bajo. Se recomienda consultar con un especialista para una evaluación más detallada.</div>' : '' }}\n            \n            <div class=\"image-section\">\n                <h3>{{ ($node['Preparar Datos MRI'].json.analysis_type || $node['Preparar Datos Emoción'].json.analysis_type) === 'tumor' ? '📈 Imagen Procesada del MRI' : '🖼️ Imagen con Análisis Emocional' }}</h3>\n                {{ ($node['Preparar Datos MRI'].json.img_result || $node['Preparar Datos Emoción'].json.img_result) ? '<img src=\"' + ($node['Preparar Datos MRI'].json.img_result || $node['Preparar Datos Emoción'].json.img_result) + '\" alt=\"Resultado del análisis\" class=\"analysis-image\" onerror=\"this.style.display=\\'none\\'; this.nextElementSibling.style.display=\\'block\\';\">' : '' }}\n                <p style=\"color: #dc3545; font-style: italic; display: none;\">❌ Error al cargar la imagen de resultado</p>\n                {{ !($node['Preparar Datos MRI'].json.img_result || $node['Preparar Datos Emoción'].json.img_result) ? '<p style=\"color: #6c757d; font-style: italic;\">⚠️ No hay imagen de resultado disponible</p>' : '' }}\n            </div>\n            \n            {{ $node['Preparar Datos MRI'].json.analysis_type === 'tumor' && $node['Preparar Datos MRI'].json.mri_report_url ? '<div class=\"image-section\"><h3>📊 Reporte Estadístico del Análisis</h3><img src=\"' + $node['Preparar Datos MRI'].json.mri_report_url + '\" alt=\"Reporte MRI\" class=\"analysis-image\"></div>' : '' }}\n\n            <div class=\"image-section\">\n                <h3>🦊 Estructura del Autoencoder</h3>\n                <img src=\"https://marketing-0i6j.onrender.com/static/autoencoder.png\" alt=\"Autoencoder Graph\" class=\"analysis-image\">\n            </div>\n        </div>\n        \n        <div class=\"footer\">\n            <p>📅 Reporte generado automáticamente</p>\n            <p>💡 Este reporte es generado por sistemas de inteligencia artificial para fines informativos.</p>\n            <p><strong>⚕️ Importante:</strong> Siempre consulte con un profesional médico calificado para diagnósticos definitivos.</p>\n        </div>\n    </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -400,
+        60
+      ],
+      "id": "8afc1d3d-0579-41b9-a856-16ef60a8c0c8",
+      "name": "Send Email",
+      "webhookId": "d752aeea-661b-422d-9683-019235665d52",
+      "credentials": {
+        "smtp": {
+          "id": "Q9uAbbiheJ13mqaf",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir Imagen": {
+      "main": [
+        [
+          {
+            "node": "Extraer Parámetros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Parámetros": {
+      "main": [
+        [
+          {
+            "node": "Elegir Análisis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Elegir Análisis": {
+      "main": [
+        [
+          {
+            "node": "Analizar Tumor MRI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analizar Emoción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Emoción": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos Emoción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Tumor MRI": {
+      "main": [
+        [
+          {
+            "node": "Verificar Error MRI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Error MRI": {
+      "main": [
+        [
+          {
+            "node": "Notificar Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar Datos MRI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos MRI": {
+      "main": [
+        [
+          {
+            "node": "Es Análisis MRI?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Emoción": {
+      "main": [
+        [
+          {
+            "node": "Es Análisis MRI?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Análisis MRI?": {
+      "main": [
+        [
+          {
+            "node": "Generar Reporte Marketing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Reporte Marketing": {
+      "main": [
+        [
+          {
+            "node": "Obtener Visualización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Visualización": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8eef14c3-fe85-491e-ad97-2b18f6316133",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "55fd0231af2ccb1ce4bd87243413e1b5037622a2d7c80c43c29358dd90792106"
+  },
+  "id": "AghTYXGTcV1K0Pvu",
+  "tags": []
+}
+
+    
+
